@@ -2,6 +2,8 @@ package redis.clients.johm;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -116,16 +118,19 @@ public final class JOhmUtils {
                     try {
                         field.set(model, id);
                     } catch (IllegalArgumentException e) {
-                        throw new JOhmException(e);
+                        throw new JOhmException(e,
+                                JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                     } catch (IllegalAccessException e) {
-                        throw new JOhmException(e);
+                        throw new JOhmException(e,
+                                JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
                     }
                     break;
                 }
             }
             if (!idFieldPresent) {
                 throw new JOhmException(
-                        "JOhm does not support a Model without an Id");
+                        "JOhm does not support a Model without an Id",
+                        JOhmExceptionMeta.MISSING_MODEL_ID);
             }
         }
     }
@@ -157,7 +162,8 @@ public final class JOhmUtils {
 
         if (type == null) {
             throw new JOhmException(dataClazz.getSimpleName()
-                    + " is not a supported JOhm Collection Data Type");
+                    + " is not a supported JOhm Collection Data Type",
+                    JOhmExceptionMeta.UNSUPPORTED_JOHM_COLLECTION);
         }
 
         return type;
@@ -195,19 +201,107 @@ public final class JOhmUtils {
         PRIMITIVE, MODEL;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static final class Validator {
         static void checkValidAttribute(final Field field) {
             Class<?> type = field.getType();
             if (converter.isSupportedPrimitive(type) == false) {
+
+
+
+
+
+
+
+
+
+
+
+
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a JOhm-supported Attribute");
+                        + " is not a JOhm-supported Attribute",
+                        JOhmExceptionMeta.UNSUPPORTED_JOHM_ATTRIBUTE);
+
             }
         }
 
         static void checkValidReference(final Field field) {
             if (!field.getType().getClass().isInstance(Model.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a subclass of Model");
+                        + " is not a subclass of Model",
+                        JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
             }
         }
 
@@ -222,16 +316,19 @@ public final class JOhmUtils {
                         id = (Long) field.get(model);
                         idFieldPresent = true;
                     } catch (IllegalArgumentException e) {
-                        throw new JOhmException(e);
+                        throw new JOhmException(e,
+                                JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                     } catch (IllegalAccessException e) {
-                        throw new JOhmException(e);
+                        throw new JOhmException(e,
+                                JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
                     }
                     break;
                 }
             }
             if (!idFieldPresent) {
                 throw new JOhmException(
-                        "JOhm does not support a Model without an Id");
+                        "JOhm does not support a Model without an Id",
+                        JOhmExceptionMeta.MISSING_MODEL_ID);
             }
             return id;
         }
@@ -246,14 +343,16 @@ public final class JOhmUtils {
                     }
                     if (JOHM_SUPPORTED_ANNOTATIONS.contains(annotationType)) {
                         throw new JOhmException(
-                                "Element annotated @Id cannot have any other JOhm annotations");
+                                "Element annotated @Id cannot have any other JOhm annotations",
+                                JOhmExceptionMeta.INVALID_MODEL_ID_ANNOTATIONS);
                     }
                 }
             }
             Class<?> type = field.getType().getClass();
             if (!type.isInstance(Long.class) || !type.isInstance(long.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is annotated an Id but is not a long");
+                        + " is annotated an Id but is not a long",
+                        JOhmExceptionMeta.INVALID_MODEL_ID_TYPE);
             }
         }
 
@@ -273,11 +372,13 @@ public final class JOhmUtils {
         static void checkValidModelClazz(final Class<?> modelClazz) {
             if (!modelClazz.isAnnotationPresent(Model.class)) {
                 throw new JOhmException(
-                        "Class pretending to be a Model but is not really annotated");
+                        "Class pretending to be a Model but is not really annotated",
+                        JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
             }
             if (modelClazz.isInterface()) {
                 throw new JOhmException(
-                        "An interface cannot be annotated as a Model");
+                        "An interface cannot be annotated as a Model",
+						JOhmExceptionMeta.INVALID_MODEL_ANNOTATION);
             }
         }
 
@@ -285,6 +386,7 @@ public final class JOhmUtils {
             if (!modelClazz.isAnnotationPresent(SupportAll.class)) {
                 throw new JOhmException(
                         "This Model does'nt support getAll(). Please annotate with @SupportAll");
+
             }
         }
 
@@ -309,35 +411,40 @@ public final class JOhmUtils {
             if (isList && isSet && isMap && isSortedSet) {
                 throw new JOhmException(
                         field.getName()
-                                + " can be declared a List or a Set or a SortedSet or a Map but not more than one type");
+                                + " can be declared a List or a Set or a SortedSet or a Map but not more than one type",
+                        JOhmExceptionMeta.INVALID_COLLECTION_ANNOTATION);
             }
         }
 
         static void checkValidCollectionList(final Field field) {
             if (!field.getType().getClass().isInstance(List.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a subclass of List");
+                        + " is not a subclass of List",
+                        JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
             }
         }
 
         static void checkValidCollectionSet(final Field field) {
             if (!field.getType().getClass().isInstance(Set.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a subclass of Set");
+                        + " is not a subclass of Set",
+                        JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
             }
         }
 
         static void checkValidCollectionSortedSet(final Field field) {
             if (!field.getType().getClass().isInstance(Set.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a subclass of Set");
+                        + " is not a subclass of Set",
+                        JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
             }
         }
 
         static void checkValidCollectionMap(final Field field) {
             if (!field.getType().getClass().isInstance(Map.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
-                        + " is not a subclass of Map");
+                        + " is not a subclass of Map",
+                        JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
             }
         }
 
@@ -345,7 +452,8 @@ public final class JOhmUtils {
             if (field.getAnnotation(Array.class).length() < actualLength) {
                 throw new JOhmException(
                         field.getType().getSimpleName()
-                                + " has an actual length greater than the expected annotated array bounds");
+                                + " has an actual length greater than the expected annotated array bounds",
+                        JOhmExceptionMeta.INVALID_ARRAY_BOUNDS);
             }
         }
 
@@ -357,7 +465,8 @@ public final class JOhmUtils {
                 if (isReference) {
                     throw new JOhmException(
                             field.getName()
-                                    + " is both an Attribute and a Reference which is invalid");
+                                    + " is both an Attribute and a Reference which is invalid",
+                            JOhmExceptionMeta.INVALID_ATTRIBUTE_AND_REFERENCE);
                 }
                 if (isIndexed) {
                     if (!isIndexable(field.getName())) {
@@ -366,7 +475,8 @@ public final class JOhmUtils {
                 }
                 if (field.getType().equals(Model.class)) {
                     throw new JOhmException(field.getType().getSimpleName()
-                            + " is an Attribute and a Model which is invalid");
+                            + " is an Attribute and a Model which is invalid",
+                            JOhmExceptionMeta.INVALID_ATTRIBUTE_AND_MODEL);
                 }
                 checkValidAttribute(field);
             }
@@ -381,8 +491,10 @@ public final class JOhmUtils {
         }
     }
 
+
     private static final Set<Class<?>> JOHM_SUPPORTED_ANNOTATIONS = new HashSet<Class<?>>();
     static {
+
         JOHM_SUPPORTED_ANNOTATIONS.add(Array.class);
         JOHM_SUPPORTED_ANNOTATIONS.add(Attribute.class);
         JOHM_SUPPORTED_ANNOTATIONS.add(CollectionList.class);

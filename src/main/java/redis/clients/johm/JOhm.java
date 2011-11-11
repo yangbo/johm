@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import redis.clients.jedis.JedisException;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.TransactionBlock;
+import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.johm.collections.RedisArray;
 
 /**
@@ -70,9 +70,11 @@ public final class JOhm {
 
             return (T) newInstance;
         } catch (InstantiationException e) {
-            throw new JOhmException(e);
+            throw new JOhmException(e,
+                    JOhmExceptionMeta.INSTANTIATION_EXCEPTION);
         } catch (IllegalAccessException e) {
-            throw new JOhmException(e);
+            throw new JOhmException(e,
+                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
         }
     }
 
@@ -218,9 +220,11 @@ public final class JOhm {
                 }
             }
         } catch (IllegalArgumentException e) {
-            throw new JOhmException(e);
+            throw new JOhmException(e,
+                    JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
         } catch (IllegalAccessException e) {
-            throw new JOhmException(e);
+            throw new JOhmException(e,
+                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
         }
 
         nest.multi(new TransactionBlock() {
@@ -290,9 +294,12 @@ public final class JOhm {
                         try {
                             fieldValue = field.get(persistedModel);
                         } catch (IllegalArgumentException e) {
-                            throw new JOhmException(e);
+                            throw new JOhmException(
+                                    e,
+                                    JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                         } catch (IllegalAccessException e) {
-                            throw new JOhmException(e);
+                            throw new JOhmException(e,
+                                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
                         }
                         if (fieldValue != null
                                 && field.isAnnotationPresent(Reference.class)) {
@@ -317,9 +324,12 @@ public final class JOhm {
                                         deleteChildren); // children
                             }
                         } catch (IllegalArgumentException e) {
-                            throw new JOhmException(e);
+                            throw new JOhmException(
+                                    e,
+                                    JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                         } catch (IllegalAccessException e) {
-                            throw new JOhmException(e);
+                            throw new JOhmException(e,
+                                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
                         }
                     }
                     if (field.isAnnotationPresent(Array.class)) {
