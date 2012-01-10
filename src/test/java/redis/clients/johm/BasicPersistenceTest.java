@@ -243,7 +243,7 @@ public class BasicPersistenceTest extends JOhmTestBase {
         assertEquals(book.getName(), savedBook.getName());
 
         // wait of expire
-        Thread.sleep(1500L);
+        Thread.sleep(2000L);
         savedBook = JOhm.get(Book.class, book.getId());
         assertNull(savedBook);
     }
