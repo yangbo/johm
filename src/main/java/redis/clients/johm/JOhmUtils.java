@@ -187,9 +187,7 @@ public final class JOhmUtils {
 
     static List<Field> gatherAllFields(Class<?> clazz) {
         List<Field> allFields = new ArrayList<Field>();
-        for (Field field : clazz.getDeclaredFields()) {
-            allFields.add(field);
-        }
+        Collections.addAll(allFields, clazz.getDeclaredFields());
         while ((clazz = clazz.getSuperclass()) != null) {
             allFields.addAll(gatherAllFields(clazz));
         }
@@ -198,97 +196,13 @@ public final class JOhmUtils {
     }
 
     public static enum JOhmCollectionDataType {
-        PRIMITIVE, MODEL;
+        PRIMITIVE, MODEL
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     static final class Validator {
         static void checkValidAttribute(final Field field) {
             Class<?> type = field.getType();
-            if (converter.isSupportedPrimitive(type) == false) {
-
-
-
-
-
-
-
-
-
-
-
+            if (!converter.isSupportedPrimitive(type)) {
 
                 throw new JOhmException(field.getType().getSimpleName()
                         + " is not a JOhm-supported Attribute",
@@ -358,11 +272,7 @@ public final class JOhmUtils {
 
         static boolean isIndexable(final String attributeName) {
             // Prevent null/empty keys and null/empty values
-            if (!isNullOrEmpty(attributeName)) {
-                return true;
-            } else {
-                return false;
-            }
+            return !isNullOrEmpty(attributeName);
         }
 
         static void checkValidModel(final Object model) {
@@ -384,8 +294,7 @@ public final class JOhmUtils {
 
         static void checkSupportAll(final Class<?> modelClazz) {
             if (!modelClazz.isAnnotationPresent(SupportAll.class)) {
-                throw new JOhmException(
-                        "This Model does'nt support getAll(). Please annotate with @SupportAll");
+                throw new JOhmException("This Model doesn't support getAll(). Please annotate with @SupportAll", JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
 
             }
         }
