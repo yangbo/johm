@@ -2,8 +2,6 @@ package redis.clients.johm;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import redis.clients.johm.collections.RedisList;
 import redis.clients.johm.collections.RedisMap;
@@ -25,12 +24,12 @@ public final class JOhmUtils {
         return field.getName() + "_id";
     }
 
-    public static Long getId(final Object model) {
+    public static String getId(final Object model) {
         return getId(model, true);
     }
 
-    public static Long getId(final Object model, boolean checkValidity) {
-        Long id = null;
+    public static String getId(final Object model, boolean checkValidity) {
+        String id = null;
         if (model != null) {
             if (checkValidity) {
                 Validator.checkValidModel(model);
@@ -69,8 +68,8 @@ public final class JOhmUtils {
                     if (set == null) {
                         CollectionSet annotation = field
                                 .getAnnotation(CollectionSet.class);
-                        RedisSet<Object> redisSet = new RedisSet<Object>(
-                                annotation.of(), nest, field, model);
+                        RedisSet<Object> redisSet = new RedisSet<Object>(annotation.of(),
+                                nest, field, model);
                         field.set(model, redisSet);
                     }
                 }
@@ -81,21 +80,18 @@ public final class JOhmUtils {
                         CollectionSortedSet annotation = field
                                 .getAnnotation(CollectionSortedSet.class);
                         RedisSortedSet<Object> redisSortedSet = new RedisSortedSet<Object>(
-                                annotation.of(), annotation.by(), nest, field,
-                                model);
+                                annotation.of(), annotation.by(), nest, field, model);
                         field.set(model, redisSortedSet);
                     }
                 }
                 if (field.isAnnotationPresent(CollectionMap.class)) {
                     Validator.checkValidCollection(field);
-                    Map<Object, Object> map = (Map<Object, Object>) field
-                            .get(model);
+                    Map<Object, Object> map = (Map<Object, Object>) field.get(model);
                     if (map == null) {
                         CollectionMap annotation = field
                                 .getAnnotation(CollectionMap.class);
                         RedisMap<Object, Object> redisMap = new RedisMap<Object, Object>(
-                                annotation.key(), annotation.value(), nest,
-                                field, model);
+                                annotation.key(), annotation.value(), nest, field, model);
                         field.set(model, redisMap);
                     }
                 }
@@ -107,7 +103,19 @@ public final class JOhmUtils {
         }
     }
 
-    static void loadId(final Object model, final Long id) {
+    static Field getIdField(final Object model) {
+        for (Field field : model.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            if (field.isAnnotationPresent(Id.class)) {
+                Validator.checkValidIdType(field);
+                return field;
+            }
+        }
+        throw new JOhmException("JOhm does not support a Model without an Id",
+                JOhmExceptionMeta.MISSING_MODEL_ID);
+    }
+
+    static void loadId(final Object model, final String id) {
         if (model != null) {
             boolean idFieldPresent = false;
             for (Field field : model.getClass().getDeclaredFields()) {
@@ -116,7 +124,24 @@ public final class JOhmUtils {
                     idFieldPresent = true;
                     Validator.checkValidIdType(field);
                     try {
-                        field.set(model, id);
+                        Class<?> type = field.getType();
+                        if (type.isAssignableFrom(Long.class)
+                                || type.isAssignableFrom(long.class)) {
+                            field.set(model, Long.parseLong(id));
+                            break;
+                        }
+                        if (type.isAssignableFrom(String.class)) {
+                            field.set(model, id);
+                            break;
+                        }
+                        if (type.isAssignableFrom(UUID.class)) {
+                            field.set(model, UUID.fromString(id));
+                            break;
+                        }
+                        throw new JOhmException(
+                                "Unknown Id field type. The field annotated "
+                                        + "with @Id should be an a Long, a String or an UUID.",
+                                JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                     } catch (IllegalArgumentException e) {
                         throw new JOhmException(e,
                                 JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
@@ -124,12 +149,10 @@ public final class JOhmUtils {
                         throw new JOhmException(e,
                                 JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
                     }
-                    break;
                 }
             }
             if (!idFieldPresent) {
-                throw new JOhmException(
-                        "JOhm does not support a Model without an Id",
+                throw new JOhmException("JOhm does not support a Model without an Id",
                         JOhmExceptionMeta.MISSING_MODEL_ID);
             }
         }
@@ -219,15 +242,31 @@ public final class JOhmUtils {
             }
         }
 
-        static Long checkValidId(final Object model) {
-            Long id = null;
+        static String checkValidId(final Object model) {
+            String id = null;
             boolean idFieldPresent = false;
             for (Field field : model.getClass().getDeclaredFields()) {
                 field.setAccessible(true);
                 if (field.isAnnotationPresent(Id.class)) {
                     Validator.checkValidIdType(field);
                     try {
-                        id = (Long) field.get(model);
+                        Class<?> type = field.getType();
+                        Object idRawValue = field.get(model);
+                        if (type.isAssignableFrom(Long.class)
+                                || type.isAssignableFrom(long.class)) {
+                            id = (idRawValue == null) ? null : ((Long) idRawValue)
+                                    .toString();
+                        } else if (type.isAssignableFrom(String.class)) {
+                            id = (String) idRawValue;
+                        } else if (type.isAssignableFrom(UUID.class)) {
+                            id = (idRawValue == null) ? null : ((UUID) idRawValue)
+                                    .toString();
+                        } else {
+                            throw new JOhmException(
+                                    "Unknown Id field type. The field annotated "
+                                            + "with @Id should be a Long, a String or an UUID.",
+                                    JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
+                        }
                         idFieldPresent = true;
                     } catch (IllegalArgumentException e) {
                         throw new JOhmException(e,
@@ -240,8 +279,7 @@ public final class JOhmUtils {
                 }
             }
             if (!idFieldPresent) {
-                throw new JOhmException(
-                        "JOhm does not support a Model without an Id",
+                throw new JOhmException("JOhm does not support a Model without an Id",
                         JOhmExceptionMeta.MISSING_MODEL_ID);
             }
             return id;
@@ -255,6 +293,7 @@ public final class JOhmUtils {
                     if (annotationType.equals(Id.class)) {
                         continue;
                     }
+                    // FIXME(rpoittevin) Should handle a @AutoInc annotation
                     if (JOHM_SUPPORTED_ANNOTATIONS.contains(annotationType)) {
                         throw new JOhmException(
                                 "Element annotated @Id cannot have any other JOhm annotations",
@@ -262,12 +301,20 @@ public final class JOhmUtils {
                     }
                 }
             }
-            Class<?> type = field.getType().getClass();
-            if (!type.isInstance(Long.class) || !type.isInstance(long.class)) {
-                throw new JOhmException(field.getType().getSimpleName()
-                        + " is annotated an Id but is not a long",
-                        JOhmExceptionMeta.INVALID_MODEL_ID_TYPE);
+            Class<?> type = field.getType();
+            if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
+                return;
             }
+            if (type.isAssignableFrom(String.class)) {
+                return;
+            }
+            if (type.isAssignableFrom(UUID.class)) {
+                return;
+            }
+            throw new JOhmException(
+                    field.getType().getSimpleName()
+                            + " is annotated an Id but is not a valid type. Valid types are long, String and UUID",
+                    JOhmExceptionMeta.INVALID_MODEL_ID_TYPE);
         }
 
         static boolean isIndexable(final String attributeName) {
@@ -286,15 +333,16 @@ public final class JOhmUtils {
                         JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
             }
             if (modelClazz.isInterface()) {
-                throw new JOhmException(
-                        "An interface cannot be annotated as a Model",
-						JOhmExceptionMeta.INVALID_MODEL_ANNOTATION);
+                throw new JOhmException("An interface cannot be annotated as a Model",
+                        JOhmExceptionMeta.INVALID_MODEL_ANNOTATION);
             }
         }
 
         static void checkSupportAll(final Class<?> modelClazz) {
             if (!modelClazz.isAnnotationPresent(SupportAll.class)) {
-                throw new JOhmException("This Model doesn't support getAll(). Please annotate with @SupportAll", JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
+                throw new JOhmException(
+                        "This Model doesn't support getAll(). Please annotate with @SupportAll",
+                        JOhmExceptionMeta.MISSING_MODEL_ANNOTATION);
 
             }
         }
@@ -326,7 +374,7 @@ public final class JOhmUtils {
         }
 
         static void checkValidCollectionList(final Field field) {
-            if (!field.getType().getClass().isInstance(List.class)) {
+            if (!field.getType().isAssignableFrom(List.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
                         + " is not a subclass of List",
                         JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
@@ -334,7 +382,7 @@ public final class JOhmUtils {
         }
 
         static void checkValidCollectionSet(final Field field) {
-            if (!field.getType().getClass().isInstance(Set.class)) {
+            if (!field.getType().isAssignableFrom(Set.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
                         + " is not a subclass of Set",
                         JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
@@ -342,7 +390,7 @@ public final class JOhmUtils {
         }
 
         static void checkValidCollectionSortedSet(final Field field) {
-            if (!field.getType().getClass().isInstance(Set.class)) {
+            if (!field.getType().isAssignableFrom(Set.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
                         + " is not a subclass of Set",
                         JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
@@ -350,7 +398,7 @@ public final class JOhmUtils {
         }
 
         static void checkValidCollectionMap(final Field field) {
-            if (!field.getType().getClass().isInstance(Map.class)) {
+            if (!field.getType().isAssignableFrom(Map.class)) {
                 throw new JOhmException(field.getType().getSimpleName()
                         + " is not a subclass of Map",
                         JOhmExceptionMeta.INVALID_COLLECTION_SUBTYPE);
@@ -372,9 +420,8 @@ public final class JOhmUtils {
             boolean isIndexed = field.isAnnotationPresent(Indexed.class);
             if (isAttribute) {
                 if (isReference) {
-                    throw new JOhmException(
-                            field.getName()
-                                    + " is both an Attribute and a Reference which is invalid",
+                    throw new JOhmException(field.getName()
+                            + " is both an Attribute and a Reference which is invalid",
                             JOhmExceptionMeta.INVALID_ATTRIBUTE_AND_REFERENCE);
                 }
                 if (isIndexed) {
@@ -394,12 +441,10 @@ public final class JOhmUtils {
             }
         }
 
-        public static boolean checkSupportedPrimitiveClazz(
-                final Class<?> primitiveClazz) {
+        public static boolean checkSupportedPrimitiveClazz(final Class<?> primitiveClazz) {
             return converter.isSupportedPrimitive(primitiveClazz);
         }
     }
-
 
     private static final Set<Class<?>> JOHM_SUPPORTED_ANNOTATIONS = new HashSet<Class<?>>();
     static {

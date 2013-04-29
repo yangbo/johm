@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.TransactionBlock;
@@ -27,7 +28,7 @@ public final class JOhm {
      * only after an initial interaction with Redis in the form of a call to
      * save().
      */
-    public static Long getId(final Object model) {
+    public static String getId(final Object model) {
         return JOhmUtils.getId(model);
     }
 
@@ -47,7 +48,7 @@ public final class JOhm {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T> T get(Class<?> clazz, long id) {
+    public static <T> T get(Class<?> clazz, String id) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
 
         Nest nest = new Nest(clazz);
@@ -70,12 +71,18 @@ public final class JOhm {
 
             return (T) newInstance;
         } catch (InstantiationException e) {
-            throw new JOhmException(e,
-                    JOhmExceptionMeta.INSTANTIATION_EXCEPTION);
+            throw new JOhmException(e, JOhmExceptionMeta.INSTANTIATION_EXCEPTION);
         } catch (IllegalAccessException e) {
-            throw new JOhmException(e,
-                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
+            throw new JOhmException(e, JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
         }
+    }
+
+    public static <T> T get(Class<?> clazz, long id) {
+        return get(clazz, Long.toString(id));
+    }
+
+    public static <T> T get(Class<?> clazz, UUID id) {
+        return get(clazz, id.toString());
     }
 
     /**
@@ -119,14 +126,14 @@ public final class JOhm {
         }
         Nest nest = new Nest(clazz);
         nest.setJedisPool(jedisPool);
-        Set<String> modelIdStrings = nest.cat(attributeName)
-                .cat(attributeValue).smembers();
+        Set<String> modelIdStrings = nest.cat(attributeName).cat(attributeValue)
+                .smembers();
         if (modelIdStrings != null) {
             // TODO: Do this lazy
             results = new ArrayList<Object>();
             Object indexed = null;
             for (String modelIdString : modelIdStrings) {
-                indexed = get(clazz, Long.parseLong(modelIdString));
+                indexed = get(clazz, modelIdString);
                 if (indexed != null) {
                     results.add(indexed);
                 }
@@ -170,14 +177,11 @@ public final class JOhm {
                 }
                 if (field.isAnnotationPresent(Array.class)) {
                     Object[] backingArray = (Object[]) field.get(model);
-                    int actualLength = backingArray == null ? 0
-                            : backingArray.length;
-                    JOhmUtils.Validator.checkValidArrayBounds(field,
-                            actualLength);
+                    int actualLength = backingArray == null ? 0 : backingArray.length;
+                    JOhmUtils.Validator.checkValidArrayBounds(field, actualLength);
                     Array annotation = field.getAnnotation(Array.class);
                     RedisArray<Object> redisArray = new RedisArray<Object>(
-                            annotation.length(), annotation.of(), nest, field,
-                            model);
+                            annotation.length(), annotation.of(), nest, field, model);
                     if (pendingArraysToPersist == null) {
                         pendingArraysToPersist = new LinkedHashMap<RedisArray<Object>, Object[]>();
                     }
@@ -188,7 +192,8 @@ public final class JOhm {
                     fieldName = field.getName();
                     Object fieldValueObject = field.get(model);
                     if (fieldValueObject != null) {
-                        String fieldValue = JOhmUtils.converter.getAsString(field, fieldValueObject);
+                        String fieldValue = JOhmUtils.converter.getAsString(field,
+                                fieldValueObject);
                         hashedObject.put(fieldName, fieldValue);
                     }
 
@@ -209,8 +214,7 @@ public final class JOhm {
                 }
                 if (field.isAnnotationPresent(Indexed.class)) {
                     Object fieldValue = field.get(model);
-                    if (fieldValue != null
-                            && field.isAnnotationPresent(Reference.class)) {
+                    if (fieldValue != null && field.isAnnotationPresent(Reference.class)) {
                         fieldValue = JOhmUtils.getId(fieldValue);
                     }
                     if (!JOhmUtils.isNullOrEmpty(fieldValue)) {
@@ -220,19 +224,16 @@ public final class JOhm {
                 }
             }
         } catch (IllegalArgumentException e) {
-            throw new JOhmException(e,
-                    JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
+            throw new JOhmException(e, JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
         } catch (IllegalAccessException e) {
-            throw new JOhmException(e,
-                    JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
+            throw new JOhmException(e, JOhmExceptionMeta.ILLEGAL_ACCESS_EXCEPTION);
         }
 
         nest.multi(new TransactionBlock() {
             public void execute() throws JedisException {
                 // to support getAll
                 if (model.getClass().isAnnotationPresent(SupportAll.class)) {
-                    nest.cat("all")
-                            .sadd(String.valueOf(JOhmUtils.getId(model)));
+                    nest.cat("all").sadd(String.valueOf(JOhmUtils.getId(model)));
                 }
                 del(nest.cat(JOhmUtils.getId(model)).key());
                 hmset(nest.cat(JOhmUtils.getId(model)).key(), hashedObject);
@@ -258,6 +259,14 @@ public final class JOhm {
      * @return
      */
     public static boolean delete(Class<?> clazz, long id) {
+        return delete(clazz, Long.toString(id));
+    }
+
+    public static boolean delete(Class<?> clazz, UUID id) {
+        return delete(clazz, id.toString());
+    }
+
+    public static boolean delete(Class<?> clazz, String id) {
         return delete(clazz, id, true, false);
     }
 
@@ -274,9 +283,19 @@ public final class JOhm {
         return nest.cat(JOhmUtils.getId(model)).expire(seconds);
     }
 
+    public static boolean delete(Class<?> clazz, long id, boolean deleteIndexes,
+            boolean deleteChildren) {
+        return delete(clazz, Long.toString(id), deleteIndexes, deleteChildren);
+    }
+
+    public static boolean delete(Class<?> clazz, UUID id, boolean deleteIndexes,
+            boolean deleteChildren) {
+        return delete(clazz, id.toString(), deleteIndexes, deleteChildren);
+    }
+
     @SuppressWarnings("unchecked")
-    public static boolean delete(Class<?> clazz, long id,
-            boolean deleteIndexes, boolean deleteChildren) {
+    public static boolean delete(Class<?> clazz, String id, boolean deleteIndexes,
+            boolean deleteChildren) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
         boolean deleted = false;
         Object persistedModel = get(clazz, id);
@@ -294,8 +313,7 @@ public final class JOhm {
                         try {
                             fieldValue = field.get(persistedModel);
                         } catch (IllegalArgumentException e) {
-                            throw new JOhmException(
-                                    e,
+                            throw new JOhmException(e,
                                     JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                         } catch (IllegalAccessException e) {
                             throw new JOhmException(e,
@@ -319,13 +337,11 @@ public final class JOhm {
                         try {
                             Object child = field.get(persistedModel);
                             if (child != null) {
-                                delete(child.getClass(),
-                                        JOhmUtils.getId(child), deleteIndexes,
-                                        deleteChildren); // children
+                                delete(child.getClass(), JOhmUtils.getId(child),
+                                        deleteIndexes, deleteChildren); // children
                             }
                         } catch (IllegalArgumentException e) {
-                            throw new JOhmException(
-                                    e,
+                            throw new JOhmException(e,
                                     JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
                         } catch (IllegalAccessException e) {
                             throw new JOhmException(e,
@@ -335,9 +351,8 @@ public final class JOhm {
                     if (field.isAnnotationPresent(Array.class)) {
                         field.setAccessible(true);
                         Array annotation = field.getAnnotation(Array.class);
-                        RedisArray redisArray = new RedisArray(
-                                annotation.length(), annotation.of(), nest,
-                                field, persistedModel);
+                        RedisArray redisArray = new RedisArray(annotation.length(),
+                                annotation.of(), nest, field, persistedModel);
                         redisArray.clear();
                     }
                 }
@@ -360,8 +375,7 @@ public final class JOhm {
     }
 
     private static void fillField(final Map<String, String> hashedObject,
-            final Object newInstance, final Field field)
-            throws IllegalAccessException {
+            final Object newInstance, final Field field) throws IllegalAccessException {
         JOhmUtils.Validator.checkAttributeReferenceIndexRules(field);
         if (field.isAnnotationPresent(Attribute.class)) {
             field.setAccessible(true);
@@ -375,33 +389,43 @@ public final class JOhm {
             String serializedReferenceId = hashedObject.get(JOhmUtils
                     .getReferenceKeyName(field));
             if (serializedReferenceId != null) {
-                Long referenceId = Long.valueOf(serializedReferenceId);
-                field.set(newInstance, get(field.getType(), referenceId));
+                field.set(newInstance, get(field.getType(), serializedReferenceId));
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     private static void fillArrayField(final Nest nest, final Object model,
-            final Field field) throws IllegalArgumentException,
-            IllegalAccessException {
+            final Field field) throws IllegalArgumentException, IllegalAccessException {
         if (field.isAnnotationPresent(Array.class)) {
             field.setAccessible(true);
             Array annotation = field.getAnnotation(Array.class);
-            RedisArray redisArray = new RedisArray(annotation.length(),
-                    annotation.of(), nest, field, model);
+            RedisArray redisArray = new RedisArray(annotation.length(), annotation.of(),
+                    nest, field, model);
             field.set(model, redisArray.read());
         }
     }
 
     @SuppressWarnings("unchecked")
     private static Nest initIfNeeded(final Object model) {
-        Long id = JOhmUtils.getId(model);
+        String id = JOhmUtils.getId(model);
         Nest nest = new Nest(model);
         nest.setJedisPool(jedisPool);
         if (id == null) {
             // lazily initialize id, nest, collections
-            id = nest.cat("id").incr();
+
+            Class<?> type = JOhmUtils.getIdField(model).getType();
+            if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
+                id = Long.toString(nest.cat("id").incr());
+            } else if (type.isAssignableFrom(String.class)
+                    || type.isAssignableFrom(UUID.class)) {
+                id = UUID.randomUUID().toString();
+            } else {
+                throw new JOhmException(
+                        "The field annotated with @Id has an invalid type.",
+                        JOhmExceptionMeta.ILLEGAL_ARGUMENT_EXCEPTION);
+            }
+
             JOhmUtils.loadId(model, id);
             JOhmUtils.initCollections(model, nest);
         }
@@ -420,7 +444,7 @@ public final class JOhm {
             results = new HashSet<Object>();
             Object indexed = null;
             for (String modelIdString : modelIdStrings) {
-                indexed = get(clazz, Long.parseLong(modelIdString));
+                indexed = get(clazz, modelIdString);
                 if (indexed != null) {
                     results.add(indexed);
                 }
