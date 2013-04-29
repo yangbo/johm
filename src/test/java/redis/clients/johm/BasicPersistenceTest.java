@@ -7,7 +7,10 @@ import org.junit.Test;
 import redis.clients.johm.models.Book;
 import redis.clients.johm.models.Country;
 import redis.clients.johm.models.FaultyModel;
+import redis.clients.johm.models.Inhabitant;
 import redis.clients.johm.models.Item;
+import redis.clients.johm.models.TestingClassWithUnvalidId;
+import redis.clients.johm.models.Town;
 import redis.clients.johm.models.User;
 
 public class BasicPersistenceTest extends JOhmTestBase {
@@ -160,6 +163,40 @@ public class BasicPersistenceTest extends JOhmTestBase {
         User savedUser = JOhm.get(User.class, user.getId());
         assertEquals(user.getName(), savedUser.getName());
         assertNull(savedUser.getRoom());
+    }
+
+    @Test(expected = JOhmException.class)
+    public void shouldNotAcceptIdsWithUnexpectedTypes() {
+        TestingClassWithUnvalidId foo = new TestingClassWithUnvalidId();
+        JOhm.save(foo);
+    }
+
+    @Test
+    public void saveModelWithStringId() {
+        Town paris = new Town();
+        paris.setName("Paris");
+        JOhm.save(paris);
+
+        assertNotNull(paris.getTownId());
+
+        Town savedParis = JOhm.get(Town.class, paris.getTownId());
+        assertNotNull(savedParis);
+
+        assertEquals(paris.getName(), savedParis.getName());
+    }
+
+    @Test
+    public void saveModelWithStringUUID() {
+        Inhabitant inhabitant = new Inhabitant();
+        inhabitant.setName("Foo");
+        JOhm.save(inhabitant);
+
+        assertNotNull(inhabitant.getId());
+
+        Inhabitant savedInhabitant = JOhm.get(Inhabitant.class, inhabitant.getId());
+        assertNotNull(savedInhabitant);
+
+        assertEquals(inhabitant.getName(), savedInhabitant.getName());
     }
 
     @Test(expected = MissingIdException.class)
