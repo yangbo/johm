@@ -1,17 +1,13 @@
 package redis.clients.johm.collections;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-
 import redis.clients.johm.Indexed;
 import redis.clients.johm.JOhm;
 import redis.clients.johm.JOhmUtils;
 import redis.clients.johm.JOhmUtils.JOhmCollectionDataType;
 import redis.clients.johm.Nest;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * RedisList is a JOhm-internal List implementation to serve as a proxy for the
@@ -19,10 +15,10 @@ import redis.clients.johm.Nest;
  * network traffic. It does a best-effort job of minimizing list entity
  * staleness but does so without any locking and is not thread-safe. Only add
  * and remove operations trigger a remote-sync of local internal storage.
- * 
+ *
  * RedisList does not support null elements.
  */
-public class RedisList<T> implements java.util.List<T> {
+public class RedisList<T> implements List<T> {
     private final Nest<? extends T> nest;
     private final Class<? extends T> elementClazz;
     private final JOhmCollectionDataType johmElementType;
@@ -46,6 +42,14 @@ public class RedisList<T> implements java.util.List<T> {
         internalIndexedAdd(index, element);
     }
 
+    public boolean append(T e) {
+        return add(e);
+    }
+
+    public boolean prepend(T e) {
+        return internalPrependAdd(e);
+    }
+
     public boolean addAll(Collection<? extends T> c) {
         boolean success = true;
         for (T element : c) {
@@ -59,6 +63,14 @@ public class RedisList<T> implements java.util.List<T> {
             internalIndexedAdd(index++, element);
         }
         return true;
+    }
+
+    public boolean prependAll(Collection<? extends T> c) {
+        boolean success = true;
+        for (T element : c) {
+            success &= internalPrependAdd(element);
+        }
+        return success;
     }
 
     public void clear() {
@@ -86,6 +98,22 @@ public class RedisList<T> implements java.util.List<T> {
             }
         }
         return element;
+    }
+
+    @SuppressWarnings("unchecked")
+    public synchronized List<T> get(int fromIndex, int toIndex) {
+        List<T> elements = new ArrayList<T>();
+
+        List<String> keys = nest.cat(JOhmUtils.getId(owner)).cat(
+            field.getName()).lrange(fromIndex, toIndex);
+        for (String key : keys) {
+          if (johmElementType == JOhmCollectionDataType.PRIMITIVE) {
+            elements.add((T) JOhmUtils.converter.getAsObject(elementClazz, key));
+          } else if (johmElementType == JOhmCollectionDataType.MODEL) {
+            elements.add((T) JOhm.get(elementClazz, Integer.valueOf(key)));
+          }
+        }
+        return elements;
     }
 
     public int indexOf(Object o) {
@@ -155,7 +183,7 @@ public class RedisList<T> implements java.util.List<T> {
                 .intValue();
     }
 
-    public java.util.List<T> subList(int fromIndex, int toIndex) {
+    public List<T> subList(int fromIndex, int toIndex) {
         return scrollElements().subList(fromIndex, toIndex);
     }
 
@@ -177,6 +205,21 @@ public class RedisList<T> implements java.util.List<T> {
             } else if (johmElementType == JOhmCollectionDataType.MODEL) {
                 success = nest.cat(JOhmUtils.getId(owner)).cat(field.getName())
                         .rpush(JOhmUtils.getId(element).toString()) > 0;
+            }
+            indexValue(element);
+        }
+        return success;
+    }
+
+    private boolean internalPrependAdd(T element) {
+        boolean success = false;
+        if (element != null) {
+            if (johmElementType == JOhmCollectionDataType.PRIMITIVE) {
+                success = nest.cat(JOhmUtils.getId(owner)).cat(field.getName())
+                    .lpush(element.toString()) > 0;
+            } else if (johmElementType == JOhmCollectionDataType.MODEL) {
+                success = nest.cat(JOhmUtils.getId(owner)).cat(field.getName())
+                    .lpush(JOhmUtils.getId(element).toString()) > 0;
             }
             indexValue(element);
         }
