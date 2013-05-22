@@ -169,30 +169,29 @@ And you are done!
 applicationContext.xml
 
 ```xml
+<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+	<property name="minIdle" value="1" />
+	<property name="maxIdle" value="8" />
+</bean>
 
-	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
-		<property name="minIdle" value="1" />
-		<property name="maxIdle" value="8" />
-	</bean>
+<bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="destroy">
+	<constructor-arg index="0" ref="poolConfig" />
+	<constructor-arg index="1" value="localhost" />
+	<constructor-arg index="2" value="6379" />
+	<constructor-arg index="3" value="2000" />
+</bean>
 
-	<bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="destroy">
-		<constructor-arg index="0" ref="poolConfig" />
-		<constructor-arg index="1" value="localhost" />
-		<constructor-arg index="2" value="6379" />
-		<constructor-arg index="3" value="2000" />
-	</bean>
+<bean id="redisOhm" class="redis.clients.johm.JOhm" factory-method="setPool" scope="singleton" >
+	<constructor-arg ref="jedisPool" />
+</bean>
 
-	<bean id="redisOhm" class="redis.clients.johm.JOhm" factory-method="setPool" scope="singleton" >
-		<constructor-arg ref="jedisPool" />
-	</bean>
-
-	<bean id="userDao" class="com.mypackage.UserDaoImpl" />
+<bean id="userDao" class="com.mypackage.UserDaoImpl" />
 ```
 
 And now you can use directly in your UserDaoImpl:
 
 ```java
-	JOhm.expire(entity, seconds);
+JOhm.expire(entity, seconds);
 ```
 	
 ## How do I use it with Scala?
