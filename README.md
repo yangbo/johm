@@ -28,110 +28,137 @@ Stay close! It is growing pretty fast!
 You can download the latest build at [http://github.com/xetorthio/johm/downloads](http://github.com/xetorthio/johm/downloads)
 
 And this is a small example (getters and setters are not included for the sake of simplicity):
-    
-    @Model
-    class User {
-        @Id
-        private Long id;
-    	@Attribute
-    	private String name;
-    	@Attribute
-    	@Indexed
-    	private int age;
-    	@Reference
-    	@Indexed
-    	private Country country;
-    	@CollectionList(of = Comment.class)
-    	@Indexed
-    	private List<Comment> comments;
-    	@CollectionSet(of = Item.class)
-    	@Indexed
-    	private Set<Item> purchases;
-    	@CollectionMap(key = Integer.class, value = Item.class)
-        @Indexed
-        private Map<Integer, Item> favoritePurchases;
-        @CollectionSortedSet(of = Item.class, by = "price")
-        @Indexed
-        private Set<Item> orderedPurchases;
-        @Array(of = Item.class, length = 3)
-        @Indexed
-        private Item[] threeLatestPurchases;
-    }
 
-    @Model
-	class Comment {
-	    @Id
-	    private Long id;
-    	@Attribute
-    	private String text;
-	}
+```java
+@Model
+class User {
+	@Id
+	private Long id;
+	
+	@Attribute
+	private String name;
+	
+	@Attribute
+	@Indexed
+	private int age;
+	
+	@Reference
+	@Indexed
+	private Country country;
+	
+	@CollectionList(of = Comment.class)
+	@Indexed
+	private List<Comment> comments;
+	
+	@CollectionSet(of = Item.class)
+	@Indexed
+	private Set<Item> purchases;
+	
+	@CollectionMap(key = Integer.class, value = Item.class)
+	@Indexed
+	private Map<Integer, Item> favoritePurchases;
+	
+	@CollectionSortedSet(of = Item.class, by = "price")
+	@Indexed
+	private Set<Item> orderedPurchases;
+	
+	@Array(of = Item.class, length = 3)
+	@Indexed
+	private Item[] threeLatestPurchases;
+}
 
-    @Model
-	class Item {
-	    @Id
-	    private Long id;
-    	@Attribute
-    	private String name;
-	}
+@Model
+class Comment {
+	@Id
+	private Long id;
+	@Attribute
+	private String text;
+}
+
+@Model
+class Item {
+	@Id
+	private Long id;
+	@Attribute
+	private String name;
+}
+```
 
 Initiating JOhm:
-    jedisPool = new JedisPool(new Config(), "localhost");
-    JOhm.setPool(jedisPool);
+
+```java
+jedisPool = new JedisPool(new Config(), "localhost");
+JOhm.setPool(jedisPool);
+```
 
 Creating a User and persisting it:
 
-	User someOne = new User();
-	someOne.setName("Someone");
-	someOne.setAge(30);
-	JOhm.save(someOne);
+```java
+User someOne = new User();
+someOne.setName("Someone");
+someOne.setAge(30);
+JOhm.save(someOne);
+```
 
 Loading a persisted User:
 	
-	User storedUser = JOhm.get(User.class, 1);
-	
+```java
+User storedUser = JOhm.get(User.class, 1);
+```
+
 Deleting a User:
 
-	JOhm.delete(User.class, 1);
+```java
+JOhm.delete(User.class, 1);
+```
 
 Search for all users of age 30:
 
-	List<User> users = JOhm.find(User.class, "age", "30");
-	
+```java
+List<User> users = JOhm.find(User.class, "age", "30");
+```
+
 Model with a reference:
 
-	User someOne = new User();
-	...
-	JOhm.save(someOne);
+```java
+User someOne = new User();
+...
+JOhm.save(someOne);
 
-	Country someCountry = new Country();
-	...
-	JOhm.save(country);
+Country someCountry = new Country();
+...
+JOhm.save(country);
 
-	someOne.setCountry(someCountry);
+someOne.setCountry(someCountry);
+```
 
 Model with a list of nested models:
 
-	User someOne = new User();
-	...
-	JOhm.save(someOne);
-	
-	Comment aComment = new Comment();
-	...
-	JOhm.save(aComment);
-	
-	someOne.getComments.add(aComment);
+```java
+User someOne = new User();
+...
+JOhm.save(someOne);
+
+Comment aComment = new Comment();
+...
+JOhm.save(aComment);
+
+someOne.getComments.add(aComment);
+```
 
 Model with a set of nested models:
 
-	User someOne = new User();
-	...
-	JOhm.save(someOne);
-	
-	Item anItem = new Item();
-	...
-	JOhm.save(anItem);
-	
-	someOne.getPurchases.add(anItem);
+```java
+User someOne = new User();
+...
+JOhm.save(someOne);
+
+Item anItem = new Item();
+...
+JOhm.save(anItem);
+
+someOne.getPurchases.add(anItem);
+```
 
 For more usage examples check the tests.
 
