@@ -162,6 +162,36 @@ applicationContext.xml
 And now you can use directly in your UserDaoImpl:
 
 	JOhm.expire(entity, seconds);
+	
+	
+## How do I use it with Scala?
+
+Item.java
+
+```java
+@Model
+class Item {
+    @Id
+    private Long id;
+    @Attribute
+    private String name;
+    
+    ...
+}
+```
+
+MyFile.scala
+
+```scala
+import redis.clients.johm.JOhm
+import scala.collection.JavaConverters._
+
+val anItem = new Item
+...
+JOhm.save[Item](anItem) // Scala type parameter needed to avoid java.lang.ClassCastException
+
+val items: List[Item] = JOhm.find(classOf[Item], "name", "aName").asScala.toList
+```
 
 ## License
 
