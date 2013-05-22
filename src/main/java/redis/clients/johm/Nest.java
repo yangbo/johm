@@ -1,12 +1,12 @@
 package redis.clients.johm;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.TransactionBlock;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Nest<T> {
     private static final String COLON = ":";
@@ -197,6 +197,13 @@ public class Nest<T> {
         Long rpush = jedis.rpush(key(), string);
         returnResource(jedis);
         return rpush;
+    }
+
+    public Long lpush(String string) {
+        Jedis jedis = getResource();
+        Long lpush = jedis.lpush(key(), string);
+        returnResource(jedis);
+        return lpush;
     }
 
     public String lset(int index, String value) {
