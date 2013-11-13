@@ -226,6 +226,7 @@ val items: List[Item] = JOhm.find(classOf[Item], "name", "aName").asScala.toList
 ## License
 
 Copyright (c) 2010 Gaurav Sharma and Jonathan Leibiusky
+
 Copyright (c) 2013 Bob Yang
 
 Permission is hereby granted, free of charge, to any person
