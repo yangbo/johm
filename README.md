@@ -223,6 +223,11 @@ JOhm.save[Item](anItem) // Scala type parameter needed to avoid java.lang.ClassC
 val items: List[Item] = JOhm.find(classOf[Item], "name", "aName").asScala.toList
 ```
 
+## Annotations
+
+- @SupportAll
+
+
 ## License
 
 Copyright (c) 2010 Gaurav Sharma and Jonathan Leibiusky
