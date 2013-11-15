@@ -47,7 +47,7 @@ public final class JOhm {
      * @param id
      * @return
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> T get(Class<?> clazz, String id) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
 
@@ -98,7 +98,7 @@ public final class JOhm {
      *            Attribute's value to search in index, can not be null!
      * @return
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> List<T> find(Class<?> clazz, String attributeName,
             Object attributeValue) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
@@ -155,7 +155,7 @@ public final class JOhm {
         return JOhm.<T> save(model, false);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> T save(final Object model, boolean saveChildren) {
         if (!isNew(model)) {
             delete(model.getClass(), JOhmUtils.getId(model));
@@ -278,7 +278,8 @@ public final class JOhm {
      * @param seconds
      * @return Long
      */
-    public static <T> Long expire(T model, int seconds) {
+    @SuppressWarnings("unchecked")
+	public static <T> Long expire(T model, int seconds) {
         Nest<T> nest = initIfNeeded(model);
         return nest.cat(JOhmUtils.getId(model)).expire(seconds);
     }
@@ -293,7 +294,7 @@ public final class JOhm {
         return delete(clazz, id.toString(), deleteIndexes, deleteChildren);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static boolean delete(Class<?> clazz, String id, boolean deleteIndexes,
             boolean deleteChildren) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
@@ -394,7 +395,7 @@ public final class JOhm {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void fillArrayField(final Nest nest, final Object model,
             final Field field) throws IllegalArgumentException, IllegalAccessException {
         if (field.isAnnotationPresent(Array.class)) {
@@ -406,7 +407,7 @@ public final class JOhm {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static Nest initIfNeeded(final Object model) {
         String id = JOhmUtils.getId(model);
         Nest nest = new Nest(model);
@@ -432,7 +433,7 @@ public final class JOhm {
         return nest;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> Set<T> getAll(Class<?> clazz) {
         JOhmUtils.Validator.checkValidModelClazz(clazz);
         JOhmUtils.Validator.checkSupportAll(clazz);
