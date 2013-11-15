@@ -51,7 +51,8 @@ public class ConverterImpl implements Converter {
         return JOHM_SUPPORTED_PRIMITIVES.contains(cls); 
     }
 
-    public Object getAsObject(Class<?> type, String value) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public Object getAsObject(Class<?> type, String value) {
         if (type.equals(Byte.class) || type.equals(byte.class)) {
             return new Byte(value);
         }
