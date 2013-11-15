@@ -225,8 +225,76 @@ val items: List[Item] = JOhm.find(classOf[Item], "name", "aName").asScala.toList
 
 ## Annotations
 
-- @SupportAll
+- @Attribute to make the property be saved to redis.
 
+- @SupportAll to make the class support getAll() methods.
+example:
+
+```java
+@Model
+@SupportAll
+class User {
+    private String name;
+}
+
+List<User> users = JOhm.getAll(User.class);
+```
+
+- @Reference means the property is a class instead of primitives.
+
+- @Indexed to make the class can be searched by fields, 
+example:
+
+```java
+@Model
+class User {
+    @Indexed
+    private int age;
+}
+
+List<User> users = JOhm.find(User.class, "age", 88);
+```
+
+When @Indexed combined with @Reference then JOhm will search the field by id of
+the referenced object, for example:
+
+```java
+@Model
+class Country{
+    @Id
+    private Long id;
+    
+    @Attribte
+    private String name;
+}
+
+@Model
+class User {
+    @Indexed
+    private int age;
+    
+    @Indexed
+    @Reference
+    private Country country;
+}
+
+Country country = new Country();
+JOhm.save(country);
+User user = new User();
+user.setCountry(country);
+JOhm.save(user);
+JOhm.find(User.class, "country", country.getId()); 
+```
+
+- @CollectionList means the property is list, the item of the list should be
+an model.
+
+## Build
+
+- Start a local redis server. 
+You can download a windows redis server from [here](https://github.com/MSOpenTech/redis/tree/2.6/bin/release).
+
+- mvn install
 
 ## License
 
