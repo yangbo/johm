@@ -93,9 +93,9 @@ public final class JOhm {
      * @param clazz
      *            Class of Model annotated-type to search
      * @param attributeName
-     *            Name of Model's attribute to search
+     *            Name of Model's attribute to search, can not be null!
      * @param attributeValue
-     *            Attribute's value to search in index
+     *            Attribute's value to search in index, can not be null!
      * @return
      */
     @SuppressWarnings("unchecked")
