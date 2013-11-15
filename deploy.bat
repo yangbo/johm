@@ -1,0 +1,1 @@
+call mvn deploy:deploy-file -Dfile=target\johm-0.5.0.jar -DgroupId=redis -DartifactId=johm -Dversion=0.5.0 -Dpackaging=jar -Durl=http://58.83.235.132:1293/nexus/content/repositories/thirdparty -DrepositoryId=third_party_release  

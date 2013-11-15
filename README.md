@@ -280,9 +280,11 @@ class User {
 
 Country country = new Country();
 JOhm.save(country);
+
 User user = new User();
 user.setCountry(country);
 JOhm.save(user);
+
 JOhm.find(User.class, "country", country.getId()); 
 ```
 
