@@ -2,12 +2,12 @@ package redis.clients.johm.utils;
 
 /**
  * Utility about Object.
+ * Usage example {@link SimpleUser}.
  */
 public class ObjectHelper {
 	
 	/**
-	 * Helper function to compute hasCode by fields. Usually not include id field
-	 * of the model.
+	 * Helper function to compute hasCode by fields.
 	 * 
 	 * @param thisFields that used to count hash code.
 	 * @return hash code computed from thisFields elements.
@@ -27,7 +27,6 @@ public class ObjectHelper {
 	
     /**
      * Helper function to determine equality.
-     * Usually not include id field of the model.
      */
     public static boolean equals(Object[] thisFields, Object[] otherFields, Object thisObj, Object other) {
     	if (thisObj == other){
