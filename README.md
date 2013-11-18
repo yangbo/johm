@@ -33,7 +33,7 @@ And this is a small example (getters and setters are not included for the sake o
 @Model
 class User {
 	@Id
-	private Long id;
+	private Long id;   // note: can not be long
 	
 	@Attribute
 	private String name;
