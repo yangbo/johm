@@ -6,7 +6,7 @@ import org.junit.Test;
 import redis.clients.johm.models.Country;
 import redis.clients.johm.models.SimpleUser;
 
-public class BaseModelTest {
+public class ObjectHelperTest {
 
 	@Test
 	public void hashCodeNotEquals() {

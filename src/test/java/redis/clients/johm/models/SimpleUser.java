@@ -19,7 +19,7 @@ import redis.clients.johm.utils.ObjectHelper;
 
 @Model
 @SupportAll
-public class SimpleUser extends ObjectHelper {
+public class SimpleUser {
     @Id
     private Long id;
     @Attribute

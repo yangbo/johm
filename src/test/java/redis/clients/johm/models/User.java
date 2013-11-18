@@ -15,6 +15,7 @@ import redis.clients.johm.Indexed;
 import redis.clients.johm.Model;
 import redis.clients.johm.Reference;
 import redis.clients.johm.SupportAll;
+import redis.clients.johm.utils.ObjectHelper;
 
 @Model
 @SupportAll
@@ -126,9 +127,61 @@ public class User {
     public void setInitial(char initial) {
         this.initial = initial;
     }
-
+    
     @Override
     public int hashCode() {
+    	Object[] thisFields = new Object[]{
+    			age,
+    			country,
+    			favoritePurchases,
+    			initial,
+    			likes,
+    			name,
+    			purchases,
+    			room,
+    			salary
+    	};
+    	return ObjectHelper.hashCode(thisFields);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        User other = (User) obj;
+
+    	Object[] thisFields = new Object[]{
+    			age,
+    			country,
+    			favoritePurchases,
+    			initial,
+    			likes,
+    			name,
+    			purchases,
+    			room,
+    			salary
+    	};
+    	
+    	Object[] otherFields = new Object[]{
+    			other.age,
+    			other.country,
+    			other.favoritePurchases,
+    			other.initial,
+    			other.likes,
+    			other.name,
+    			other.purchases,
+    			other.room,
+    			other.salary
+    	};
+    	return ObjectHelper.equals(thisFields, otherFields, this, obj);
+    }
+    
+//    @Override
+    public int hashCode0() {
         final int prime = 31;
         int result = 1;
         result = prime * result + age;
@@ -147,8 +200,8 @@ public class User {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    //@Override
+    public boolean equals0(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
