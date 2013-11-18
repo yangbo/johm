@@ -45,7 +45,7 @@ public final class JOhm {
      * @param <T>
      * @param clazz
      * @param id
-     * @return
+     * @return null if not found.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> T get(Class<?> clazz, String id) {
@@ -77,6 +77,12 @@ public final class JOhm {
         }
     }
 
+    /**
+     * get object by id.
+     * @param clazz object class
+     * @param id object id
+     * @return null if not found.
+     */
     public static <T> T get(Class<?> clazz, long id) {
         return get(clazz, Long.toString(id));
     }

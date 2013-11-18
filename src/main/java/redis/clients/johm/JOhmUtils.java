@@ -252,8 +252,8 @@ public final class JOhmUtils {
                     try {
                         Class<?> type = field.getType();
                         Object idRawValue = field.get(model);
-                        if (type.isAssignableFrom(Long.class)
-                                || type.isAssignableFrom(long.class)) {
+                        // primitive type long should not be valid
+                        if (type.isAssignableFrom(Long.class)) {
                             id = (idRawValue == null) ? null : ((Long) idRawValue)
                                     .toString();
                         } else if (type.isAssignableFrom(String.class)) {
